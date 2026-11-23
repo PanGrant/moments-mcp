@@ -30,7 +30,7 @@ PIXELS_PER_EVENT = 30
 # Gap between the burst's events. Live 2026-11-13: at 0.02s the burst reads
 # as a flick (only real fast flicks reach ~50 events/sec), and WeChat's
 # WKWebView answers with inertial glide — a 0.3h command flew ≥1.2h twice
-# (2026-11-09 17:00 ~2h, 2026-11-13 skipped Viva entirely). 0.08s ≈ a real
+# (2026-11-09 17:00 ~2h, 2026-11-13 skipped AuthorA entirely). 0.08s ≈ a real
 # mouse wheel's ratchet cadence: each event is consumed on its own, no
 # momentum. Pixel yield is unaffected — only the gesture reading changes.
 PIXEL_EVENT_GAP_SECONDS = 0.08

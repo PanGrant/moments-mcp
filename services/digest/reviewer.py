@@ -3,7 +3,7 @@
 User directive (2026-11-08): given a persona (default 「情绪价值输出机器人」,
 user-selectable later), walk the digest items one by one and produce an
 appreciative/agreeable comment for each — EXCEPT service/sponsored accounts
-(the dropdown-arrow posts: WorkBuddy / 糖K经理 / …), which are skipped via
+(the dropdown-arrow posts: TestBuddy / 糖K经理 / …), which are skipped via
 the sponsored flag set at ingest by the arrow probe. Every reply is signed
 and stored as a moments_comment draft (status='draft'); nothing is sent —
 confirmation happens through the existing draft flow (edit → send).

@@ -78,7 +78,7 @@ MAX_ANCHORS_ARMED = 12
 # 全空、无文字可辨——宁可漏一条 1 小时差的新帖，不可对同一帖回复两次。
 ABS_TOL_MIN = 60
 # 弱路（作者匹配但一侧时间没露面）并帐所需的最低正文锚亲缘：
-# 同作者两条帖的行交叉相似度实测 ~0.2（James Guan 双帖），同一帖
+# 同作者两条帖的行交叉相似度实测 ~0.2（AuthorE 双帖），同一帖
 # 自身行是 1.0，0.4 分得很开
 WEAK_AUTHOR_FLOOR = 0.4
 # 精确锚绑定的单行证据门槛（2026-11-17 深夜）：片段行归一后 ≥12 字才
@@ -95,7 +95,7 @@ CLIMB_MAX_PRESS = 3    # 单块回攀按键限额。Q2（用户裁决 2026-11-17
 CLIMB_BOTTOM_Y = 0.85  # 时间条贴此线以下 = 对齐块（A1 落点形状）
 CLIMB_TOP_Y = 0.06     # 块体起于此线以上 = 帖头确在折叠线上方（A2）
 
-# 照片尾认领（2026-11-15 James Guan 12图帖漏回）：门牌帖跨过屏幕底缘、
+# 照片尾认领（2026-11-15 AuthorE 12图帖漏回）：门牌帖跨过屏幕底缘、
 # 时间/•• 未露面时 entry 挂 tail_pending；下一落地顶在屏幕最上沿、无门牌、
 # 无文字行的尾巴凭该挂账认领（三尺都要文字行，纯照片尾一行都没有）。
 STRADDLE_Y = 0.985      # post bottom crossing here = straddles the fold
@@ -219,7 +219,7 @@ def _match_entry(post: Dict, ledger: Dict) -> Optional[Dict]:
                 return entry
             if not et or not nt:
                 # 弱路（一侧时间没露面）不能盲并：同作者两条帖时会把另一
-                # 条帖的行折进来（2026-11-15 James Guan 双帖并帐——新帖
+                # 条帖的行折进来（2026-11-15 AuthorE 双帖并帐——新帖
                 # 的 acted 把旧帖未发出的回复遮成"已回过"）。正文锚毫无
                 # 亲缘就跳过该 entry 继续试后面候选；norms/anchors 缺一
                 # 边（纯照片尾）照旧放行，第四尺兜底不受影响。
@@ -242,7 +242,7 @@ def _match_entry(post: Dict, ledger: Dict) -> Optional[Dict]:
                 # 内容亲缘闸（2026-11-17 无草 DS 帖三连回复定案）：同作者
                 # 的另一条帖 abs 同样可能落窗内（一天 9 条 Channels 转发）。
                 # 两侧都有行而锚最大亲缘 < WEAK_AUTHOR_FLOOR = 拒并（弱路
-                # 2026-11-15 James Guan 双帖同款闸）；一侧无行（纯照片尾）
+                # 2026-11-15 AuthorE 双帖同款闸）；一侧无行（纯照片尾）
                 # 照旧放行，第四尺兜底。
                 ea = entry.get("abs_time")
                 pa = _abs_time(time_text, _time.time())
@@ -261,16 +261,16 @@ def _match_entry(post: Dict, ledger: Dict) -> Optional[Dict]:
                 return entry
         if len(set(norms) & set(entry.get("anchors") or [])) >= ANCHOR_OVERLAP:
             return entry
-    # 第四尺（兜底，2026-11-15 James Guan 12图帖漏回）：纯照片尾——无
+    # 第四尺（兜底，2026-11-15 AuthorE 12图帖漏回）：纯照片尾——无
     # 门牌，文字尺对它无从着力（真实扫描里时间行会并进 body：17 字的
     # "32 minute(s) ago" 不是身份线索），前三尺全空后按位置+挂账认领。
-    # 时间行门（2026-11-17 Viva 照片尾滞留定案，用户设计“记住状态+
+    # 时间行门（2026-11-17 AuthorA 照片尾滞留定案，用户设计“记住状态+
     # 用同一套历史-vs-当前的比较法认这贴是不是刚才那贴”）：碎片时间行
     # 在（照片尾唯一能读的文本证据）时，账上有标签的 armed 条目必须与
     # 碎片标签 normalize 严格相等，不符出局——挂账条目若有标签（门牌
     # 落地见过时间行）还与尾巴对不上，位置证据就不足为凭。账上全无标
     # 签（James 式：门牌落地时间行未露面，标签本就空）没法比，维持旧
-    # 路。不做小时容差：贴容差=给同轮巧合撞车开门。真机定案：Viva 滞
+    # 路。不做小时容差：贴容差=给同轮巧合撞车开门。真机定案：AuthorA 滞
     # 留的真因是僵尸挂账（无标签、旧伤疤）把单臂变多臂、照片尾拿不出
     # 文字打破僵局——本门让无标签僵尸在有标签碎片前自动出局。盲飞清
     # 账（位置连续性）；acted 拦重放。
@@ -327,7 +327,7 @@ def _bind_headless(post: Dict, ledger: Dict) -> Optional[Dict]:
     的唯一安全身份路——片段的长行（归一 ≥BIND_ROW_MIN）必须逐行精确
     命中某条 entry 的 anchors（门牌落地存下的正文行），且全部证据只
     指向这一条 entry。模糊比率在这条路上一律无效：L18 冤案 = 无门牌
-    坨（费荔思帖尾+胡吟卡顶）被模糊匹配成胡吟、坨里费荔思的正文喂了
+    坨（作者己帖尾+作者甲卡顶）被模糊匹配成作者甲、坨里作者己的正文喂了
     组稿；两条 entry 的证据并存 = 混块，拒绝（宁漏勿错送）。OCR 花字
     破坏精确相等 → 绑不上 → 诚实跳过，同旧路。acted/ad/own 照常绑定
     ——绑定后由 _actionable 后续关卡各自拦住（跳过已回过 等留痕）。
@@ -439,7 +439,7 @@ def identify(scan: Dict, ledger: Dict, cfg: Dict,
                 # 标签是观察值不是身份（身份=冻结 key）：每次重见刷成当前
                 # 标签。floor 制下同一帖的标签只增不减——冻结首见会让第四
                 # 尺时间行门把"同一帖标签自然走到"拒成 no-doorplate
-                # （2026-11-17 15:22 真机：viva|2h 账上 2h、L13 屏上 3h、
+                # （2026-11-17 15:22 真机：作者甲帖|2h 账上 2h、L13 屏上 3h、
                 # L14 尾屏碎片 3h → 门拒绝 → 冰激凌回复二轮滞留）。key 保
                 # 持首见形态不动（B4 稳定身份）；abs_time 仍冻结不回写。
                 entry["time_text"] = time_text
@@ -478,15 +478,15 @@ def _actionable(post: Dict, ledger: Dict, cfg: Dict,
     gone, but the identity was doorplate-proven on the earlier landing
     and the (pending) reply was composed from the FULL body back then.
     The mere three-ruler fuzzy match is NOT identity:
-    用户令（2026-11-17，L18 冤案定案）——22:05 轮把"费荔思帖尾+胡吟
-    卡顶"的无门牌地屏坨模糊匹配成胡吟，坨里费荔思的正文喂了组稿，
+    用户令（2026-11-17，L18 冤案定案）——22:05 轮把"作者己帖尾+作者甲
+    卡顶"的无门牌地屏坨模糊匹配成作者甲，坨里作者己的正文喂了组稿，
     上贴的回复回到了两帖（其中一条被用户删除）。模糊认领一律 no-
     doorplate，诚实跳过。
 
     唯一窄门（2026-11-17 深夜，三漏定案第三修的延伸）：未挂账 entry 的
     无门牌片段可凭「精确锚绑定」放行——片段长行逐行精确命中该 entry 的
     anchors 且证据不指向第二条 entry（_bind_headless）。这堵的是真机
-    00:31 轮的另一半漏：胡吟|2h 的门牌落在合法整屏跳的跨越区里永不再
+    00:31 轮的另一半漏：作者甲|2h 的门牌落在合法整屏跳的跨越区里永不再
     露面，文字片段落地时旧门只会 no-doorplate 跳过 → 帖子 24h 窗口内
     永远没回。组稿正文由 hook 取 entry 的 anchors（门牌落地的全量行），
     不取屏上坨里的半截行。"""
@@ -691,11 +691,11 @@ def walk(*, press_down: Callable[[], None],
     sleep = sleep or _time.sleep
     emit = emit or (lambda ev: None)   # 结构化事件流（脸/代理用；不传=无操作）
     ledger = load_ledger(ledger_path) if ledger_path else empty_ledger()
-    # 挂账军团治理（2026-11-17 Viva 三轮滞留定案，B4 落地）：tail_pending
+    # 挂账军团治理（2026-11-17 AuthorA 三轮滞留定案，B4 落地）：tail_pending
     # 是轮内瞬态——上一轮的挂账跨轮存活只产生军团（真机账 13 条：广告/
     # 服务号帖永不会 acted→永不摘账），还与真挂账同标签撞车（安徽服务
-    # 管家|4h vs viva|2h 同为 "4 hour(s) ago"，第四尺歧义拒认 → 冰激凌
-    # 回复三轮滞留）。轮起手全清；本轮路过跨越/展开挂账的条目由
+    # 某服务号|4h vs 作者甲帖|2h 同为 "4 hour(s) ago"，第四尺歧义拒认 → 一条回复
+    # 三轮滞留）。轮起手全清；本轮路过跨越/展开挂账的条目由
     # _arm_tail 自然重挂，投递链不受影响（重入永远从顶走，任何重见都
     # 先经过门牌/跨越落地）。
     for e in ledger["posts"]:
@@ -814,7 +814,7 @@ def walk(*, press_down: Callable[[], None],
         # chain, so the walker's stale snapshot only decides WHO; the
         # ledger's acted marks gate each pass). One action per landing was
         # the v2 shape — live 2026-11-15 it stranded same-screen posts
-        # (Gracie lost her landing to Vicky.L and the next ↓ flew past).
+        # (AuthorK lost her landing to Vicky.L and the next ↓ flew past).
         # A deferred result ends the landing's acting: the deferral needs
         # ↓ motion to reach the tail, and not marking acted means the
         # same post would re-fire forever on this screen.

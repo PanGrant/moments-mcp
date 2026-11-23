@@ -467,7 +467,7 @@ def _content_rows(rows):
     junk ('Q', 'D', sidebar glyphs) is dropped. The feed ALWAYS has text
     here — the first post's author name at minimum — while the fullscreen
     image viewer washes/presses text out and the cover photo carries no
-    text. y floor 0.42→0.12 (2026-11-16 21:21 胡吟帖真机证据 av2.png)：
+    text. y floor 0.42→0.12 (2026-11-16 21:21 作者甲帖真机证据 av2.png)：
     展开后的健康帧全部文字都在 y<0.35（其下是未加载的空白九宫格），
     旧带把整帧文字排除 → 冤判 viewer → act-error。标题栏文字
     （Moments ≈0.06）仍被 0.12 挡住。"""
@@ -534,7 +534,7 @@ def classify_capture(path):
 def cover_name_evidence(cap):
     """封面名牌证据（2026-11-16 深夜竞态教训）：⟳ 簇在标题栏常驻，
     "无时间行 + ⟳ 簇"就宣称封面顶被半路帧冒充了两次——评论区自己的
-    'Grant Pan' 回复行冒充封面署名，pre-check 假判在顶 → 跳过 reopen →
+    'Test Owner' 回复行冒充封面署名，pre-check 假判在顶 → 跳过 reopen →
     ⟳ 换血完成后的延迟回位把起步视口拖回半路（一次 ↓ 瞬移 30 帖、
     2 落地即停两轮）。真封面名牌的不变量：归一化后就是名字本身的短行、
     在右侧封面位（cx≥0.55）、封面带（cy∈[0.35,0.8]）。评论行带被回复人
@@ -703,7 +703,7 @@ def _reopen_enter(win, tag):
 
 
 def feed_top_check_poll(win, tag, tries=3, gap=2.5):
-    """顶部判据轮询（2026-11-22 WorkBuddy 实跑 FATAL×2 教训）：重入朋友圈
+    """顶部判据轮询（2026-11-22 TestBuddy 实跑 FATAL×2 教训）：重入朋友圈
     后封面照片/名牌是惰性绘制，重入点击后 2-4s 内的单发检查可能量不到
     ⟳ 簇 + 封面名牌 → 假「未达顶部」→ 误 FATAL。间隔重试，tries 次
     仍不达才下结论（真·半路视图多等几秒无害——纯看，不动作）。"""
@@ -1017,7 +1017,7 @@ def build_fresh_prompt(author, text, persona=None):
     的【本次定制】节（style 风格片段 + extra 自由补充；webapp UI 与
     moments-mcp settings 工具写的同一份存储），插在『要求：』之前——
     输出格式指令保持在末尾不被稀释。persona 可注入（generate_fresh
-    复用同一次解析——署名与人设必须同源；2026-11-22 Erin 冤案教训：
+    复用同一次解析——署名与人设必须同源；2026-11-22 AuthorI 冤案教训：
     拆函数时把 persona 留在原函数外，签名步 NameError，LLM 成功也
     白烧）。无注入时自解析，纯函数可单测。"""
     from services.digest.reviewer import PROMPT_TEMPLATE, _resolve_persona
@@ -1282,7 +1282,7 @@ def read_top_post(win):
     texts = unit.get("texts") or []
     # key on the FIRST text line only: my sent comments glue onto the tail
     # of the unit and must never change a post's identity (live 2026-11-08:
-    # ZhangRobin's post got re-processed after commenting)
+    # AuthorD's post got re-processed after commenting)
     head = (texts[0] if texts else "")[:60]
     closer = unit.get("closer") or ""
     for sep in ("：", ":"):
@@ -1293,14 +1293,14 @@ def read_top_post(win):
                 break
     if not author:
         # EN absolute time glued with author+text in one OCR row
-        # ("Yesterday ZhangRobin：突然怀旧…") — the known extraction
+        # ("Yesterday AuthorD：突然怀旧…") — the known extraction
         # limitation, handled here for posting
         m = re.match(r"^(yesterday|today|昨天|今天|前天)\s*([^：:]{1,12})[：:]",
                      head, re.I)
         if m:
             author, head = m.group(2), head[m.end():]
     if author in OWN_NAMES or author in UI_TOKENS:
-        # my own comment strip / UI chrome is not a post — the Grant Pan
+        # my own comment strip / UI chrome is not a post — the Test Owner
         # comment rows caused the jumping; "Show More" hides collapsed
         # long text whose real header is above (live 2026-11-08)
         author = ""
@@ -1528,7 +1528,7 @@ def do_send(st):
     seen = seen.replace(" ", "")
     n = normalize_for_match(st["text"]).replace(" ", "")
     # 送达只认文本专属探针（头/尾12字）——签名是所有我们评论共用的，
-    # 屏上别的自己评论会单独满足它（James Guan 文庙假 ok 同源，2026-11-17）
+    # 屏上别的自己评论会单独满足它（某历史帧假 ok 同源，2026-11-17）
     ok = bool(n) and (n[:12] in seen or n[-12:] in seen)
     box_gone = all(normalize_for_match(r.get("text") or "") != "send"
                    for r, px, py in rows_in(ocr_rows(f"{OUT}/send1.png"), b))

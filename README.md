@@ -59,5 +59,4 @@ Claude/智谱这类服务的付费钥匙）。全程不需要任何云服务账�
 
 - 架构与源码导读：各模块开头的文档串（`moments_mcp.py`、
   `services/digest/`、`scripts/feed_reader.py`）
-- 跑测试：`python3 -m pytest tests/ -q`（全离线，不会碰真机）
-- 本项目从作者的私人研究仓库切出，设计过程文档暂未公开
+- 本仓库只发布运行所需内容；开发与测试在作者的私人研究仓库进行

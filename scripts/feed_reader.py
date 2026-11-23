@@ -188,7 +188,7 @@ def send_landed(seen: str, text: str) -> bool:
     """Send-verification probe: TEXT-SPECIFIC ONLY (head/tail 12
     normalized chars of our own reply). The signature probe is shared by
     EVERY comment we post — any one of our comments visible on screen
-    satisfies it (James Guan 文庙冤案 2026-11-17 定案：旁边博物馆帖的
+    satisfies it (the temple-post false-positive, 2026-11-17: a nearby
     真评论的签名单独满足了 any()，叠加输入框占位符没读到时的盲点降级
     → 假 ok 封账、帖上无评论、永不重试）。"""
     n = normalize_for_match(text).replace(" ", "")
@@ -472,7 +472,7 @@ class Actor:
         pt.full_capture(sentp)
         fb2 = pt.fresh_win().bounds
         seen = self._screen_text(sentp, fb2)
-        # 送达只认文本专属探针（head/tail12；签名单独不算数——文庙冤案）
+        # 送达只认文本专属探针（head/tail12；签名单独不算数——某帖假 ok 冤案）
         landed = send_landed(seen, text)
         box_gone = all(normalize_for_match(r.get("text") or "") != "send"
                        for r, _px, _py in pt.rows_in(pt.ocr_rows(sentp), fb2))
@@ -662,7 +662,7 @@ def main():
         events_path = sys.argv[sys.argv.index("--events") + 1]
     emit = make_emitter(events_path)
     action_events = []
-    # run_start 提前到 spawn 即发（2026-11-22 WorkBuddy 实跑教训：刷新链
+    # run_start 提前到 spawn 即发（2026-11-22 TestBuddy 实跑教训：刷新链
     # 可长至 ~4 分钟且原先全程零事件，status 一直"0 屏"被当卡死停掉——
     # 事件文件一出生就有 run_start + phase，进度随时可查）。
     emit({"t": "run_start", "mode": mode, "max_landings": max_landings,

@@ -115,8 +115,8 @@ AVATAR_MIN_ROWS = 5
 # run reach full height (70-78px spread is the avatar's edge-content
 # variance, not size variance). Cap must clear the avatar's normalized
 # height at ANY window height with margin; the cover (~0.45) stays excluded.
-# 真机铁证 2026-11-16：Viva 帖名牌可见却 author=None（78px run > 74.2px cap），
-# 整晚"有时回有时不回"的硬币就是这枚（fixtures/viva_share_frame.png）。
+# 真机铁证 2026-11-16：AuthorA 帖名牌可见却 author=None（78px run > 74.2px cap），
+# 整晚"有时回有时不回"的硬币就是这枚（真机帧证据，私有语料）。
 AVATAR_MAX_H = 0.20
 # One avatar's own white band (a light row inside the image) can split it
 # into two runs; runs this close (fraction of height) are one avatar —

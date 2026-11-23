@@ -104,7 +104,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 TITLE_BAND_Y = 0.08     # rows starting above this = navigation chrome
 # Post content column (author/text/time all start here). The upper bound
-# deliberately excludes the profile-cover name ("Grant Pan" sits at x≈0.61,
+# deliberately excludes the profile-cover name ("Test Owner" sits at x≈0.61,
 # right-aligned over the avatar) — without this, the cover name would be
 # taken as the first post's author and the first real post mis-attributed.
 CONTENT_X = (0.25, 0.50)
@@ -123,7 +123,7 @@ FOOTER_INDENT_X = 0.36
 # fixed content indent (x≈0.306-0.309); the avatar column to the left is
 # ignored wholesale (user directive 2026-11-08). Live 2026-11-13: OCR
 # left-edge jitter by first glyph puts real names as low as 0.289
-# ('Viva' — v's left bearing vs 卫's 0.293; content rows share the same
+# ('AuthorA' — v's left bearing vs 卫's 0.293; content rows share the same
 # edge, so the y-zone does the real separation on the bounded path) —
 # 0.29 rejected the name by 0.001 and honest-braked at her door.
 AUTHOR_X_MIN = 0.285
@@ -184,7 +184,7 @@ LOOSE_AUTHOR_MIN_Y = 0.18
 # region whose closing divider sits DEEP below holds the COMPLETE next post
 # — the previous post's tail left the screen together with its own divider,
 # so the real header may sit right at the screen top and the feed-top cover
-# floor must be dropped. Live case: 胡吟's header at y=0.078 went
+# floor must be dropped. Live case: 作者甲's header at y=0.078 went
 # unattributed on such a screen and the suffixed time row
 # ('2 hour(s) ago Channels·…') masqueraded as the author. Shallow regions
 # (landed-low tail slivers) and divider-less tall posts keep the floor.
@@ -192,7 +192,7 @@ MID_FEED_DROP_FLOOR_MIN_Y = 0.28
 # Sponsored-badge scan band (user rule: the badge marks a promoted post).
 # The badge is meaningful for THIS read only inside the author-row band —
 # a badge lower on screen belongs to a LOWER post's header riding in the
-# same capture (live 2026-11-09 false skips: 潘乐乐's poem post eaten by
+# same capture (live 2026-11-09 false skips: 作者乙's poem post eaten by
 # 千问 PC's badge at y=0.72; a friend's company check-in by one at 0.95).
 SPONSOR_BADGE_MAX_Y = 0.35
 # The folded-comments strip ("余下2条〉") sits in the author column
@@ -204,7 +204,7 @@ _FOOTER_STRIP_RE = re.compile(r"^余下\s*\d+\s*条")
 # More-menu arrow probe (自主批阅, 2026-11-08): service/sponsored accounts
 # render a dropdown arrow at the far right of the AUTHOR row; personal posts
 # leave that zone blank. Measured on the 091925 round (882px captures):
-# arrow ink 糖K经理 [0.890..0.909] / 服务管家 [0.890..0.909], WorkBuddy's
+# arrow ink 糖K经理 [0.890..0.909] / 服务管家 [0.890..0.909], TestBuddy's
 # "Sponsored v" run [0.799..0.920]; personal names' ink never leaves their
 # own OCR bbox (max name bbox right edge ~0.54). Phantom long-text
 # "authors" (unbounded tail rows) also only ink INSIDE their bbox — their
@@ -539,7 +539,7 @@ def measure_col_x(rows: List[Dict]) -> Optional[float]:
     - 只信时间行：万得股票快讯卡内嵌新闻时间戳 '11月16日 15:18'
       @0.337（真左缘 0.26）是全屏唯一时间行形状候选 → col_x=0.337、
       照片列吞卡、起步屏被判"绝对日期出界"0 按键即停；
-    - 只信长行（当晚第一次改）：Viva 帧唯一合格长行是卡内文章标题
+    - 只信长行（当晚第一次改）：AuthorA 帧唯一合格长行是卡内文章标题
       @0.382 → col_x=0.382、photo_x1=0.374、照片列吞掉卡缩略图，
       分段全毁。卡帧上作者名（短行）与正文长行常被卡行挤出局，
       没有任何单一形状保证在场。
@@ -759,7 +759,7 @@ def _doorplate_row(region_rows: List[Dict], by0: float, by1: float,
     只认位置。照片列是丈量出的头像专属带（avatar_blocks 的墨迹行），
     正文列顶上贴着块顶的那行就是作者名，不管内容；自信分/长度/格式
     黑名单在这里没有管辖权（普查 27 帧 26 候选：内容门从未拦下过垃
-    圾，只误杀过真名 —— Viva 两连漏，conf 0.3 < 0.45）。唯一的例外
+    圾，只误杀过真名 —— AuthorA 两连漏，conf 0.3 < 0.45）。唯一的例外
     是右侧下拉箭头（广告帖 → 跳过），由 scan_screen 在命中之后用像
     素探针另判（sponsored_arrow），不进本函数。唯一的结构要求：那行
     得是文字行（OCR 行都满足）。"""
@@ -900,7 +900,7 @@ def author_arrow_present(image_path: str, author_y: float, author_h: float,
     Scans the author-row y band across ARROW_SCAN_X for ink runs; an ink
     run that starts at least ARROW_GAP right of the name row's own right
     edge and reaches into the arrow zone (ARROW_ZONE_X) means a
-    service/sponsored account (WorkBuddy / 糖K经理 / 服务管家). False when
+    service/sponsored account (TestBuddy / 糖K经理 / 服务管家). False when
     Pillow is unavailable or the image unreadable (probe is best-effort
     enrichment — extraction itself never depends on it)."""
     try:

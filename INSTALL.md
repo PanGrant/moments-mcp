@@ -17,8 +17,10 @@
 
 - macOS + 已登录的 Mac 版微信（客户端在前台可用）
 - Python 3.9+（`python3 --version`）
-- 一个 OpenAI 兼容的 LLM API 钥匙（默认配置指向智谱 GLM，可换任意
-  兼容服务）
+- 一个大模型 API 钥匙。**不需要 OpenAI**：默认直连智谱 GLM
+  （open.bigmodel.cn，国内可用），DeepSeek/Kimi/通义千问等说同一套
+  接口协议的服务都能用——`openai` 只是那个协议的免费客户端库，不是
+  OpenAI 服务本身（详见 `.env.example`）
 
 ## 1. 获取代码并安装依赖
 

@@ -27,21 +27,29 @@
 ```bash
 git clone <本仓库地址> moments-mcp
 cd moments-mcp
-pip3 install -r requirements.txt
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r requirements.txt
 ```
 
-国内网络建议用镜像源安装（全部依赖均有国内镜像，已实测可完整获取，
-含 macOS 预编译包、无需编译）：
+**为什么先建虚拟环境、先升级 pip**：macOS 自带 Python 附带的 pip 版本很
+老，会给部分依赖选中需要源码编译的包（在新系统上必然编译失败）；升级
+后它会自动选择带 macOS 预编译包的版本，全程不需要编译环境。
+
+国内网络建议用镜像源安装（全部依赖均有国内镜像，已实测可完整获取）：
 
 ```bash
-pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+.venv/bin/pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 想一次配置永久生效：
 
 ```bash
-pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+.venv/bin/pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 ```
+
+之后本文档所有 Python 命令都用 `.venv/bin/python3`（或先
+`source .venv/bin/activate` 激活虚拟环境再用 `python3`）。
 
 ## 2. 给系统权限（两处，缺一不可）
 
@@ -53,7 +61,7 @@ pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 验证（终端里跑，输出 True 即通过）：
 
 ```bash
-python3 -c "from services.digest.scroller import accessibility_trusted; print(accessibility_trusted())"
+.venv/bin/python3 -c "from services.digest.scroller import accessibility_trusted; print(accessibility_trusted())"
 ```
 
 ## 3. 配置钥匙和自己的名字
@@ -86,14 +94,14 @@ EOF
 Claude Code：
 
 ```bash
-claude mcp add moments -- python3 /完整路径/moments-mcp/moments_mcp.py
+claude mcp add moments -- /完整路径/moments-mcp/.venv/bin/python3 /完整路径/moments-mcp/moments_mcp.py
 ```
 
 Claude Desktop（`claude_desktop_config.json`）：
 
 ```json
 {"mcpServers": {"moments": {
-  "command": "python3",
+  "command": "/完整路径/moments-mcp/.venv/bin/python3",
   "args": ["/完整路径/moments-mcp/moments_mcp.py"]}}}
 ```
 

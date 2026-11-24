@@ -30,6 +30,19 @@ cd moments-mcp
 pip3 install -r requirements.txt
 ```
 
+国内网络建议用镜像源安装（全部依赖均有国内镜像，已实测可完整获取，
+含 macOS 预编译包、无需编译）：
+
+```bash
+pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+想一次配置永久生效：
+
+```bash
+pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
 ## 2. 给系统权限（两处，缺一不可）
 
 **系统设置 → 隐私与安全性 →**

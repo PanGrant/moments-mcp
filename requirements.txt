@@ -4,3 +4,6 @@ openai
 pyobjc-framework-Cocoa
 pyobjc-framework-Quartz
 pyobjc-framework-Vision
+
+# 布局定义层（L1 图纸）+ 语料普查零漂移门 —— github.com/PanGrant/ldl
+ldl @ git+https://github.com/PanGrant/ldl.git

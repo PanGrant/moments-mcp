@@ -42,6 +42,9 @@ sys.path.insert(0, _HERE)
 sys.path.insert(0, os.path.dirname(_HERE))
 sys.dont_write_bytecode = True
 
+from services.digest.envfile import load_env_file
+load_env_file(os.path.join(os.path.dirname(_HERE), ".env"))
+
 spec = importlib.util.spec_from_file_location(
     "post_test", os.path.join(_HERE, "post_test.py"))
 pt = importlib.util.module_from_spec(spec)

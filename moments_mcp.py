@@ -57,9 +57,11 @@ TOOLS = [
             "到帖子后**真实公开发表评论**（每条自动带固定署名「AI助手胡"
             "乱解读自动回复，内容请忽略」），必须先获得用户的明确同意才"
             "可调用（arguments 里 confirm=true，缺它会直接被拒绝——先把"
-            "要做什么如实讲给用户听）。act 按帐本里全部待回候选**全量**"
-            "回复——没有按帖/按人挑选的参数，用户想只回部分帖子时如实"
-            "说做不到，不要承诺「只回某几条」。本工具立即返回 run_id，不等待走完"
+            "要做什么如实讲给用户听）。act 默认按帐本里全部待回候选"
+            "**全量**回复；想只回部分时用 only_authors 参数按**作者**"
+            "挑选（只能整作者挑，没有按单帖挑选的参数，不要承诺「只回"
+            "某一条」）；持久跳过名单（moments_settings_set 的 "
+            "skip_authors）里的作者会被自动跳过。本工具立即返回 run_id，不等待走完"
             "；用 moments_status 查进度（建议每 5-10 秒）。⟳ 刷新链起步"
             "可长至约 4 分钟，起步 0 屏是正常现象，不要提前放弃。要走到"
             "Yesterday 边界建议 max_landings≥40。同一时刻只允许一轮（"
@@ -84,6 +86,14 @@ TOOLS = [
                     "description": "最多走多少屏（默认 30；要走到 Yesterday 边界建议 ≥40）",
                     "default": 30, "minimum": 1, "maximum": 200,
                 },
+                "only_authors": {
+                    "type": "array", "items": {"type": "string"},
+                    "description": (
+                        "act 模式本轮正向挑选：只对名单内作者的帖子发表"
+                        "评论（作者名按 moments_status 未回清单里的写法"
+                        "抄）。不传或空数组 = 不挑选，待回候选全量回复"
+                        "（默认）。只对本轮有效，不改持久设置。"),
+                },
             },
         },
     },
@@ -93,9 +103,10 @@ TOOLS = [
             "查询走轮进度：状态（进行中/完成/异常）、落地屏数、按键数、"
             "停止原因；act 轮附动作明细（回给谁/结果/回复摘要）；最新"
             "一轮的查询还附未回清单（帐本当前待回帖：作者+正文摘要），"
-            "仅供圈定参考——目前**没有**按帖挑选回复的参数（act 是全量），"
-            "也**没有**视频转文字能力（视频帖只有识别到的字幕文字或"
-            "〔正文无文字〕），不要向用户承诺这两类服务。"
+            "仅供圈定参考——圈定手段是按**作者**：act 传 only_authors "
+            "只回名单内的（按单帖挑选的参数**没有**）；也**没有**视频"
+            "转文字能力（视频帖只有识别到的字幕文字或〔正文无文字〕），"
+            "不要向用户承诺这两类服务。"
             "不带 run_id = 查当前进行中的"
             "一轮（没有则列最近几轮）；带 run_id 可查历史任意一轮。"),
         "inputSchema": {
@@ -122,22 +133,28 @@ TOOLS = [
     {
         "name": "moments_settings_get",
         "description": (
-            "读取回复内容定制（风格 + 自由补充）：act 模式组稿评论时按"
-            "它写。用户问「现在是什么语气」或想改定制前，先读这个。"
-            "**发起 act（自动回复）前也先读一次**，把当前指引（风格/"
-            "补充/固定署名）展示给用户，问一句「要修改吗」再继续。"),
+            "读取回复定制全貌：语气风格 + 自由补充 + 持久跳过名单（"
+            "skip_authors，名单内作者 act 永不回）+ 署名现状（可定制，"
+            "清空=评论不再带 AI 披露）。act 模式组稿评论时按它写。用户"
+            "问「现在是什么语气」或想改定制前，先读这个。**发起 act"
+            "（自动回复）前也先读一次**，把当前指引展示给用户，问一句"
+            "「要修改吗」再继续。"),
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "moments_settings_set",
         "description": (
-            "设置回复内容定制。style=单选预设（可选键与含义见 "
+            "设置回复定制。style=单选预设（可选键与含义见 "
             "moments_settings_get 返回的风格目录）；extra=自由文本 ≤500"
             " 字，原样追加进组稿要求（如「别聊政治」「多问近况」）。"
-            "用户用自然语言描述想要的写法时（如「热情点，多问近况」）"
-            "：选最接近的风格键，其余细节放 extra。只传要改的字段，"
-            "未传的保持原值。署名固定不可定制。保存后下一轮 act 组稿"
-            "即生效。"),
+            "skip_authors=持久跳过名单（字符串数组；空数组=清空名单"
+            "恢复全回；名单内作者的帖子 act 永不回——帖留待回状态，"
+            "之后从名单移除即可恢复可达）。signature_label="
+            "评论署名（≤60 字）；**传空字符串=清空署名，之后发出的评论"
+            "不再带「AI 助手」披露标注**——必须先向用户确认这是本意才"
+            "可清。用户用自然语言描述想要的写法时（如「热情点，多问"
+            "近况」）：选最接近的风格键，其余细节放 extra。只传要改的"
+            "字段，未传的保持原值。保存后下一轮 act 组稿即生效。"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -145,6 +162,17 @@ TOOLS = [
                           "description": "风格键（见 moments_settings_get 的目录）"},
                 "extra": {"type": "string",
                           "description": "自由补充要求，≤500 字"},
+                "skip_authors": {
+                    "type": "array", "items": {"type": "string"},
+                    "description": ("持久跳过名单（作者名完整写法）；空数组="
+                                    "清空名单恢复默认全回"),
+                },
+                "signature_label": {
+                    "type": "string",
+                    "description": ("评论署名，≤60 字，自动追加在每条评论"
+                                    "末尾；空字符串=清空（无 AI 披露，需用户"
+                                    "明确确认）"),
+                },
             },
         },
     },
@@ -181,8 +209,9 @@ def _ledger_pending_text():
     """未回清单（2026-11-22 切片 2.1，"看一遍→列给用户圈定→再回"流程的
     地基）。候选 = 近 ~36h 内、status=pending、未 acted、非广告非自己
     （与 walker 一天边界的工作集对齐；再老的帐本留着但不可达，列出来
-    是噪音）。顺序 = 帐本序（feed 新→旧），cap 15。缺文件/读不到/无
-    候选都如实说。"""
+    是噪音）。持久跳过名单内的作者分流出去（2026-11-25：他们的帖会
+    一直 pending，列出来是噪音；末尾一行如实交代分流了几条）。顺序 =
+    帐本序（feed 新→旧），cap 15。缺文件/读不到/无候选都如实说。"""
     path = _ledger_path()
     if not os.path.exists(path):
         return "未回清单：帐本文件不在（还没成功走过一轮）。"
@@ -192,6 +221,7 @@ def _ledger_pending_text():
     except (OSError, ValueError) as e:
         return f"未回清单：帐本读不到（{e}）。"
     posts = led.get("posts", []) if isinstance(led, dict) else led
+    skip = set(reply_settings.load().get("skip_authors") or [])
     now = time.time()
     fresh = [p for p in posts
              if not p.get("acted")
@@ -199,7 +229,13 @@ def _ledger_pending_text():
              and p.get("author")
              and isinstance(p.get("abs_time"), (int, float))
              and now - p["abs_time"] <= 36 * 3600]
+    shunted = [p for p in fresh if p.get("author") in skip]
+    fresh = [p for p in fresh if p.get("author") not in skip]
     if not fresh:
+        if shunted:
+            names = "、".join(sorted({p["author"] for p in shunted}))
+            return ("未回清单：帐本当前没有待回帖"
+                    f"（跳过名单内分流 {len(shunted)} 帖：{names}）。")
         return "未回清单：帐本当前没有待回帖。"
     lines = []
     for p in fresh[:15]:
@@ -219,16 +255,26 @@ def _ledger_pending_text():
             head = head[:40] + "…"
         lines.append(f"- {p['author']}（{t}）：{head}")
     more = f"\n- …另有 {len(fresh) - 15} 条" if len(fresh) > 15 else ""
+    shunt_note = ""
+    if shunted:
+        names = "、".join(sorted({p["author"] for p in shunted}))
+        shunt_note = (f"\n（另有跳过名单内 {len(shunted)} 帖未列出"
+                      f"：{names}——要回他们先从名单移除）")
     return (f"未回清单（帐本当前·待回 {len(fresh)} 帖）：\n"
-            + "\n".join(lines) + more)
+            + "\n".join(lines) + more + shunt_note)
 
 
-def _build_cmd(mode, landings, ev_path):
+def _build_cmd(mode, landings, ev_path, only_authors=None):
     """caffeinate -is 包裹（FACE_DESIGN §6）；参数与手完全一致。
-    --keep 无条件带上（帐本续用；不带它本体清账本！）。"""
-    return ["caffeinate", "-is", sys.executable, SCRIPT,
-            "--keep", "--landings", str(int(landings)),
-            "--mode", mode, "--events", ev_path]
+    --keep 无条件带上（帐本续用；不带它本体清账本！）。
+    only_authors 每作者一个 --only-author（重复参数，名字含任意字符
+    都安全——不用分隔符拼接）。"""
+    cmd = ["caffeinate", "-is", sys.executable, SCRIPT,
+           "--keep", "--landings", str(int(landings)),
+           "--mode", mode, "--events", ev_path]
+    for a in (only_authors or []):
+        cmd += ["--only-author", str(a)]
+    return cmd
 
 
 class RunManager:
@@ -270,7 +316,8 @@ class RunManager:
         return self._newest_events_path()
 
     # -- tools --------------------------------------------------------
-    def start(self, max_landings=30, mode="readonly", confirm=False):
+    def start(self, max_landings=30, mode="readonly", confirm=False,
+              only_authors=None):
         if mode not in ("readonly", "act"):
             return ("mode 只能是 readonly 或 act。", True)
         if mode == "act" and confirm is not True:
@@ -279,6 +326,18 @@ class RunManager:
             return ("act 模式被拒绝：这会真实公开发表评论，必须用户本人"
                     "明确同意后才可调用——把要做的事如实讲给用户，得到"
                     "同意后带上 confirm=true 再来。", True)
+        # only_authors 清洗（2026-11-25）：字符串数组 → 去空白/去重/封顶；
+        # 传了但格式不对 = 明确报错（宿主好自查），静默吞掉会变成"说好
+        # 挑选却全量回复"——那是这次要消灭的事故。
+        if only_authors is not None:
+            if not isinstance(only_authors, list) or any(
+                    not isinstance(a, str) for a in only_authors):
+                return ("only_authors 必须是字符串数组（作者名，"
+                        "见 moments_status 未回清单）。", True)
+            only_authors = list(dict.fromkeys(
+                a.strip() for a in only_authors if a.strip()))[:50]
+            if not only_authors:
+                only_authors = None
         if self._live():
             return (f"微信忙：运行 {self.run_id} 进行中"
                     f"（先 moments_status 查看或 moments_stop 停止，"
@@ -294,14 +353,17 @@ class RunManager:
         log_f = open(log_path, "w")
         try:
             self.proc = subprocess.Popen(
-                _build_cmd(mode, max_landings, ev_path),
+                _build_cmd(mode, max_landings, ev_path, only_authors),
                 stdout=log_f, stderr=log_f, start_new_session=True)
         finally:
             log_f.close()
         self.run_id, self.events_path, self.mode = run_id, ev_path, mode
         label = "只读" if mode == "readonly" else "自动回复"
+        pick = (f"，本轮挑选：只回 {len(only_authors)} 位作者的帖子"
+                f"（{'、'.join(only_authors)}）") \
+            if (mode == "act" and only_authors) else ""
         return (f"已发起{label}走轮 {run_id}（mode={mode}，"
-                f"max_landings={max_landings}）。"
+                f"max_landings={max_landings}{pick}）。"
                 f"立即返回，不等走完——用 moments_status 查进度，"
                 f"需要中止用 moments_stop。", False)
 
@@ -419,21 +481,37 @@ def settings_get_text():
                        for k, v in reply_settings.STYLES.items())
     extra = (st.get("extra") or "").strip()
     names = st.get("own_names") or []
+    skip = st.get("skip_authors") or []
+    sig = reply_settings.resolve_signature()
+    if "signature_label" in st:
+        sig_line = ("署名："
+                    + (f"「{sig}」" if sig
+                       else "【已清空——之后发出的评论不再带 AI 披露标注】"))
+    else:
+        sig_line = f"署名：「{sig}」（默认值，可用 signature_label 定制；" \
+                   "清空=评论不再带 AI 披露，需用户明确确认）"
     return ("当前定制：style=" + st["style"] + "；"
             + (f"extra=「{extra}」" if extra else "无自由补充") + "\n"
             + "自己人名单（own_names）："
             + (", ".join(names) if names
                else "【未设置——自己的帖子将不被识别，实跑前必须设置！"
                     "编辑 data/moments_settings.json 加 own_names 字段】") + "\n"
-            + "风格目录：\n" + styles + "\n"
-            + "署名固定：每条评论末尾自动附「AI助手胡乱解读自动回复，"
-              "内容请忽略」——宪法级项，不进定制面。", False)
+            + "持久跳过名单（skip_authors）："
+            + (", ".join(skip) if skip
+               else "【空——默认全回；要永久不回某些作者，用 "
+                    "moments_settings_set 的 skip_authors 设置】") + "\n"
+            + sig_line + "\n"
+            + "风格目录：\n" + styles, False)
 
 
 def settings_set_text(args):
-    if not isinstance(args, dict) or (
-            not args.get("style") and "extra" not in args):
-        return ("没给要改的字段：style 和/或 extra 至少传一个。", True)
+    if not isinstance(args, dict):
+        return ("参数必须是对象。", True)
+    given = [k for k in ("style", "extra", "skip_authors", "signature_label")
+             if k in args]
+    if not given:
+        return ("没给要改的字段：style / extra / skip_authors / "
+                "signature_label 至少传一个。", True)
     cur = reply_settings.load()
     style = args.get("style") or cur["style"]
     extra = args.get("extra") if "extra" in args else cur["extra"]
@@ -441,13 +519,44 @@ def settings_set_text(args):
     if err:
         return (f"设置被拒绝：{err}（可选风格见 moments_settings_get）。",
                 True)
-    reply_settings.save(style, extra or "")
+    skip = None
+    if "skip_authors" in args:
+        skip = args.get("skip_authors")
+        if not isinstance(skip, list) or any(
+                not isinstance(a, str) for a in skip):
+            return ("skip_authors 必须是字符串数组（空数组=清空名单）。",
+                    True)
+        skip = list(dict.fromkeys(
+            a.strip() for a in skip if a.strip()))
+        if len(skip) > reply_settings.SKIP_AUTHORS_MAX:
+            return (f"skip_authors 最多 {reply_settings.SKIP_AUTHORS_MAX} "
+                    "人。", True)
+    sig_given = "signature_label" in args
+    sig = ""
+    if sig_given:
+        sig = str(args.get("signature_label") or "").strip()
+        if len(sig) > reply_settings.SIGNATURE_MAX:
+            return (f"signature_label 最长 {reply_settings.SIGNATURE_MAX} "
+                    "字。", True)
+    reply_settings.save(style, extra or "", skip_authors=skip,
+                        signature_label=sig if sig_given else reply_settings.KEEP)
     st = reply_settings.load()
     extra2 = (st.get("extra") or "").strip()
-    return ("已保存：style=" + st["style"] + "；"
-            + (f"extra=「{extra2}」" if extra2 else "无自由补充")
-            + "——下一轮 act 组稿即生效（readonly 不组稿，不受影响）。",
-            False)
+    skip2 = st.get("skip_authors") or []
+    sig2 = reply_settings.resolve_signature()
+    parts = ["已保存：style=" + st["style"] + "；"
+             + (f"extra=「{extra2}」" if extra2 else "无自由补充")]
+    parts.append("跳过名单=" + (", ".join(skip2) if skip2 else "【空，全回】"))
+    if "signature_label" in st:
+        parts.append("署名=" + (f"「{sig2}」" if sig2
+                                else "【已清空——评论不再带 AI 披露标注】"))
+    warn = ""
+    if sig_given and not sig:
+        warn = ("\n⚠ 署名已清空：之后发出的评论不再带「AI 助手」披露"
+                "标注，看评论的人无法知道这是自动回复——如非本意，"
+                "马上把 signature_label 设回默认文本。")
+    return ("；".join(parts) + "——下一轮 act 组稿即生效"
+            "（readonly 不组稿，不受影响）。" + warn, False)
 
 
 # ------------------------------------------------------------- 协议层
@@ -487,15 +596,17 @@ def handle(msg, mgr=None):
                     "moments_status 等完成（最新一轮完成态附未回清单）→ "
                     "把清单列给用户（共几条、都是谁），问是否都回 → 用户"
                     "确认后再 mode=act + confirm=true 走一遍（组稿按"
-                    "刚保存的指引写）。"
+                    "刚保存的指引写）；只想回其中某些**作者**时给 act 传 "
+                    "only_authors（按单帖挑选没有）。"
                     "moments_walk 发起后立即返回 run_id"
                     "——不要原地等待，用 moments_status 每 5-10 秒轮询并"
                     "向用户转述进度；必要时 moments_stop。mode=readonly "
-                    "只看不评；mode=act 会真实公开发评论（带固定署名），"
-                    "必须先获得用户明确同意（confirm=true），且建议 "
-                    "max_landings≥40 才能走到边界；⟳ 刷新链起步可长至"
-                    "约 4 分钟，0 屏不是卡死。回复语气/补充要求用 "
-                    "moments_settings_get/set 读写。"),
+                    "只看不评；mode=act 会真实公开发评论（每条自动带署名"
+                    "——署名可在 settings 定制或清空，清空前必须用户"
+                    "明确确认），必须先获得用户明确同意（confirm=true），"
+                    "且建议 max_landings≥40 才能走到边界；⟳ 刷新链起步"
+                    "可长至约 4 分钟，0 屏不是卡死。回复语气/补充要求/"
+                    "跳过名单/署名用 moments_settings_get/set 读写。"),
             })
         if method == "ping":
             return ok({})
@@ -508,7 +619,8 @@ def handle(msg, mgr=None):
                 text, is_err = mgr.start(
                     max_landings=int(args.get("max_landings") or 30),
                     mode=args.get("mode") or "readonly",
-                    confirm=bool(args.get("confirm")))
+                    confirm=bool(args.get("confirm")),
+                    only_authors=args.get("only_authors"))
             elif name == "moments_status":
                 text, is_err = mgr.status(args.get("run_id"))
             elif name == "moments_stop":

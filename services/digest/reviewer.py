@@ -19,17 +19,20 @@ from typing import Any, Callable, Dict, List, Optional
 
 from . import db
 from .config import load_env_file
+from .reply_settings import DEFAULT_SIGNATURE, resolve_signature
 
 DEFAULT_PERSONA = {
     # 2026-11-15 user: 情绪价值机器人 persona is retired — the replier is
     # just 「AI助手」, and the signature itself carries the full disclosure
     # (AI auto-reply, misreading, ignore it).
+    # 2026-11-25 用户令：署名不再是宪法级固定项——经
+    # reply_settings.resolve_signature 解析（settings 显式定制 > env >
+    # 本默认值），""=不加署名。
     "name": "AI助手",
-    "signature": "（AI助手胡乱解读自动回复，内容请忽略）",
+    "signature": DEFAULT_SIGNATURE,
 }
-# Persona (later user-selectable) and signature override the defaults via env.
+# Persona name (later user-selectable) overrides the default via env.
 PERSONA_NAME_ENV = "DIGEST_REVIEW_PERSONA"
-SIGNATURE_ENV = "DIGEST_REVIEW_SIGNATURE"
 
 MAX_TEXT_CHARS = 4000  # same truncation budget as summarize
 
@@ -87,7 +90,7 @@ def _resolve_persona(persona: Optional[Dict[str, str]]) -> Dict[str, str]:
         p.update({k: v for k, v in persona.items() if v})
     load_env_file()
     p["name"] = os.environ.get(PERSONA_NAME_ENV) or p["name"]
-    p["signature"] = os.environ.get(SIGNATURE_ENV) or p["signature"]
+    p["signature"] = resolve_signature()
     return p
 
 

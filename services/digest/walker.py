@@ -48,6 +48,7 @@ against the entry's stored anchors (SequenceMatcher ≥ BODY_FUZZY), exact
 anchor overlap ≥ ANCHOR_OVERLAP.
 """
 import json
+import os
 import re
 import time as _time
 from difflib import SequenceMatcher
@@ -638,8 +639,19 @@ def _migrate_abs(ledger: Dict) -> Dict:
 
 
 def save_ledger(ledger: Dict, path: str) -> None:
-    with open(path, "w", encoding="utf-8") as f:
+    # 原子写（2026-11-25，.corrupt-1711 残骸定案）：直写 open(w) 在进程
+    # 被杀/写到一半崩溃时留下截断 JSON，而 load_ledger 对坏 JSON 静默
+    # 回空账——已回帖的 acted 痕迹全部清零，下一轮 = 对同一批人重复
+    # 发评论。tmp + os.replace 同目录原子改名，截断类损伤从此绝根；
+    # tmp 用隐藏名 + pid 后缀（单轮锁下双写者只是理论风险），崩溃残留
+    # 的 tmp 不伤读侧（load 只认正名）。
+    d = os.path.dirname(path) or "."
+    tmp = os.path.join(d, f".{os.path.basename(path)}.tmp-{os.getpid()}")
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(ledger, f, ensure_ascii=False, indent=1)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
 
 
 def _fuzzy_overlap(a_norms: List[str], b_norms: List[str],
@@ -666,6 +678,7 @@ def walk(*, press_down: Callable[[], None],
          act_fn: Optional[Callable[[Dict], Dict]] = None,
          act_max_hours: float = 24.0,
          max_act_fails: int = 2,
+         only_authors: Optional[List[str]] = None,
          emit: Optional[Callable[[Dict], None]] = None) -> Dict:
     """The pure-↓ walk loop (v1 read-only; act_fn adds the v2 处置 hook).
 
@@ -676,6 +689,10 @@ def walk(*, press_down: Callable[[], None],
     _actionable verdict is None gets act_fn(post) — expand full text +
     comment entry live in the hook, IO belongs to the runner) → press ↓.
     One action per landing; acted posts never re-act (ledger marks them).
+    Name gates (2026-11-25): the persistent skip list (cfg["skip_authors"])
+    never acts on its authors; only_authors acts ONLY on its authors this
+    round — both gates skip with a log line and leave the post pending
+    (never 封账), so a later list-free act round still reaches it.
     After acting the motion self-check re-arms (the screen legitimately
     changed under us — expansion grows the post), and consecutive act
     failures stop the walk (act-failed; `soft` results — honest
@@ -690,6 +707,17 @@ def walk(*, press_down: Callable[[], None],
     log = log or default_log
     sleep = sleep or _time.sleep
     emit = emit or (lambda ev: None)   # 结构化事件流（脸/代理用；不传=无操作）
+    # 名单闸预归一（2026-11-25 用户拍板，宿主「帐本手术」事件的正门
+    # 替代）：① 持久跳过名单 cfg["skip_authors"]（settings 存，默认空
+    # =全回）——名单内作者永不回；② 本轮正向挑选 only_authors（工具
+    # 参数，仅本轮生效）——传了就只回名单内作者。两道闸都只拦「这轮
+    # 不回」，**不封账**：帖留 pending，之后任一轮不带名单的 act 照常
+    # 可达（这正是帐本手术被封账的恶果的反面）。
+    only_norms = {normalize_for_match(n) for n in (only_authors or [])
+                  if str(n).strip()} - {""}
+    skip_norms = {normalize_for_match(n) for n in (cfg.get("skip_authors")
+                                                   or [])
+                  if str(n).strip()} - {""}
     ledger = load_ledger(ledger_path) if ledger_path else empty_ledger()
     # 挂账军团治理（2026-11-17 AuthorA 三轮滞留定案，B4 落地）：tail_pending
     # 是轮内瞬态——上一轮的挂账跨轮存活只产生军团（真机账 13 条：广告/
@@ -856,6 +884,20 @@ def walk(*, press_down: Callable[[], None],
                         e0 = _bind_headless(p, ledger)
                     who = (p.get("author") or (e0 or {}).get("author")
                            or "?")
+                    # 名单闸（先于处置）：跳过要留痕且 tried 记账（同屏
+                    # 一键一试），绝不 acted 封账——名单外/跳过名单内的
+                    # 帖保持待回状态。
+                    who_norm = normalize_for_match(who)
+                    if who_norm and who_norm in skip_norms:
+                        tried.add(pi)
+                        log(f"[walker] landing {landing}: 跳过 {who!r} "
+                            "原因=skip-list（持久跳过名单）")
+                        continue
+                    if only_norms and who_norm not in only_norms:
+                        tried.add(pi)
+                        log(f"[walker] landing {landing}: 跳过 {who!r} "
+                            "原因=not-on-list（本轮 only_authors 挑选）")
+                        continue
                     log(f"[walker] landing {landing}: 处置 {who!r} "
                         f"时间={p['time_row']['text']!r}")
                     target = dict(p)

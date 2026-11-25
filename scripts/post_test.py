@@ -68,6 +68,10 @@ MORE_X = 0.884  # measured in poster_probe recon: the •• glyph on the time r
 # 的 own_names（moments_settings 工具/手编均可设）。**必须设置**：
 # 空清单意味着自己的帖子不被识别，首次实跑可能回复到自己的动态。
 OWN_NAMES = set(reply_settings.load().get("own_names") or [])
+# 持久跳过名单（2026-11-25 用户拍板「默认全回+跳过名单」）：feed_reader
+# 把它放进 walker cfg 的 skip_authors，名单内作者 act 永不回（帖留
+# pending 不封账）。同一存储、同一新鲜度模型（每轮新进程现读）。
+SKIP_NAMES = set(reply_settings.load().get("skip_authors") or [])
 UI_TOKENS = {"Show More", "Show Less", "Comment", "Like", "Send",
              "查看详情", "广告"}  # chrome, never an author
 SW = CGDisplayBounds(CGMainDisplayID()).size.width
@@ -231,10 +235,11 @@ def recover_top_by_arrow_up(win, tag, check_fn=None, press_fn=None,
 
 def _sig_probe():
     """Verification probe for paste/send: the signature, from its single
-    source (reviewer.DEFAULT_PERSONA, env-overridable). The old code
+    source (reply_settings.resolve_signature: settings 显式定制 > env >
+    默认文本；"" = 无署名 → 探针为空串，paste_verified 的 `p and` 门
+    自动跳过它，证据退头/尾 12 字 + 绿按钮结构证据）。The old code
     hardcoded '情绪价值机器人' here — a rename would have silently
-    disabled the signature evidence path (head/tail probes would still
-    catch it, but only when OCR reads ≥12 chars of body)."""
+    disabled the signature evidence path."""
     from services.digest.reviewer import _resolve_persona
     return normalize_for_match(_resolve_persona(None)["signature"]).replace(" ", "")
 
@@ -1041,7 +1046,9 @@ def generate_fresh(author, text):
     reuses reviewer's tuned prompt (乱码忽略/情绪倾向/多样开头) and the free
     summarize model. NO cached drafts, NO DB. The key is never printed.
     回复定制（reply_settings）每帖现读现用——改完定制下一帖即生效；
-    署名仍由 persona 固定追加，不进定制面（2026-11-17 设计）。"""
+    署名由 persona 追加（2026-11-25 用户令起可经 settings 的
+    signature_label 定制或清空，resolve_signature 单一事实源；""
+    =不加署名）。"""
     from services.digest.reviewer import (
         body_understandable, TooShortToReply, _resolve_persona)
     # 帖文太短不硬回（用户 2026-11-15 令）：确定性下限先拦，连模型都不调

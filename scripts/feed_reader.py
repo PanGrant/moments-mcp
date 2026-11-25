@@ -663,13 +663,23 @@ def main():
     events_path = None
     if "--events" in sys.argv:
         events_path = sys.argv[sys.argv.index("--events") + 1]
+    # 本轮正向挑选（2026-11-25）：--only-author 可重复传（MCP 壳每作者
+    # 一个参数，名字含逗号也安全）；不传 = 全量（原行为）。
+    only_authors = []
+    k = 1
+    while k < len(sys.argv):
+        if sys.argv[k] == "--only-author" and k + 1 < len(sys.argv):
+            only_authors.append(sys.argv[k + 1])
+            k += 2
+            continue
+        k += 1
     emit = make_emitter(events_path)
     action_events = []
     # run_start 提前到 spawn 即发（2026-11-22 TestBuddy 实跑教训：刷新链
     # 可长至 ~4 分钟且原先全程零事件，status 一直"0 屏"被当卡死停掉——
     # 事件文件一出生就有 run_start + phase，进度随时可查）。
     emit({"t": "run_start", "mode": mode, "max_landings": max_landings,
-          "pid": os.getpid()})
+          "pid": os.getpid(), "only_authors": only_authors})
 
     def emit_wrap(ev):
         if ev.get("t") == "action":
@@ -784,9 +794,12 @@ def main():
     actor = None if mode == "readonly" else Actor(schema_box, OUT)
     r = walk(press_down=press_down, press_up=press_up,
              capture=capture, scan_fn=scan_fn,
-             cfg={"own_names": pt.OWN_NAMES}, ledger_path=LEDGER,
+             cfg={"own_names": pt.OWN_NAMES,
+                  "skip_authors": sorted(pt.SKIP_NAMES)},
+             ledger_path=LEDGER,
              log=wlog, max_landings=max_landings,
-             act_fn=actor.act if actor else None, emit=emit_wrap)
+             act_fn=actor.act if actor else None,
+             only_authors=only_authors, emit=emit_wrap)
 
     # ------------------------------------------------------- summary
     ok = sum(1 for ev in action_events if ev.get("result") == "ok")

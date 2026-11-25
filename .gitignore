@@ -1,12 +1,6 @@
-# 钥匙与凭据——绝不入库
-.env
-
-# 运行时产物（设置、本机数据库）——不属于安装内容
-data/
-
-# Python
+.DS_Store
 __pycache__/
 *.pyc
-.pytest_cache/
 .venv/
-venv/
+.env
+data/moments_settings.json

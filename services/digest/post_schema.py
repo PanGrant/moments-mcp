@@ -97,6 +97,22 @@ the run's column at schema.button_x (median).
 import re
 from typing import Callable, Dict, List, Optional, Tuple
 
+from .layout_def import build as _build_layout_def
+
+# ---------------------------------------------------------------------------
+# 判据声明化（2026-11-25，ldl 试点第 2 步）：下面经 _H[...] 装订的阈值，
+# 源头不再是本文件——是 services/digest/layout_def.build().habits（每条
+# 带语料证据出处）。改阈值 → 改图纸（layout_def.py），施工侧导入时自动
+# 跟随；图纸本身损坏则在这里响亮拒绝启动。历史教训注释保留原位。
+# 其余未声明阈值（AUTHOR_MAX_LEN / REGION_AUTHOR_MIN_CONF / ANCHOR_* 等）
+# 仍住施工侧，待扩图纸后收编。
+# ---------------------------------------------------------------------------
+_LAYOUT_DEF = _build_layout_def()
+_LAYOUT_ERRS = _LAYOUT_DEF.validate()
+if _LAYOUT_ERRS:
+    raise RuntimeError(f"布局图纸校验失败，施工拒绝启动: {_LAYOUT_ERRS}")
+_H = _LAYOUT_DEF.habits
+
 # ---------------------------------------------------------------------------
 # tuning constants (moved verbatim from ocr_extract 2026-11-15; the comments
 # are live-lesson history — recalibrate against real captures)
@@ -107,7 +123,8 @@ TITLE_BAND_Y = 0.08     # rows starting above this = navigation chrome
 # deliberately excludes the profile-cover name ("Test Owner" sits at x≈0.61,
 # right-aligned over the avatar) — without this, the cover name would be
 # taken as the first post's author and the first real post mis-attributed.
-CONTENT_X = (0.25, 0.50)
+CONTENT_X = (_H["content_x_lo"]["value"], _H["content_x_hi"]["value"])
+CLUSTER_GAP = _H["cluster_gap"]["value"]   # measure_col_x 最左簇簇距
 GLYPH_CONF = 0.50       # short rows below this confidence are icon glyphs
 AUTHOR_MIN_CONF = 0.55
 AUTHOR_MAX_LEN = 30     # visual characters (long service-account names like
@@ -139,11 +156,11 @@ REGION_AUTHOR_MIN_CONF = 0.45
 # (2026-11-08): author_y - divider_y ∈ [0.049, 0.055]; 0.07 covers the
 # band and excludes the first content row. Hard-coded for the current
 # machine/resolution — must become configuration (user directive).
-AUTHOR_ZONE = 0.07
+AUTHOR_ZONE = _H["author_zone"]["value"]
 # Name rows start at x≈0.306-0.309; share-card titles at x≈0.34+ (the
 # card's own indent). Without this ceiling the card title row qualifies as
 # the author whenever the real name row is missing.
-AUTHOR_X_MAX = 0.33
+AUTHOR_X_MAX = _H["author_x_max"]["value"]
 # Doorplate name band around a photo block (normalized window height).
 # Corpus geometry (2026-11-15, 235 keep claims vs the head-cut card-cover
 # false claims): a real name row HUGS the block's ink top — offsets span
@@ -151,16 +168,16 @@ AUTHOR_X_MAX = 0.33
 # top behind the nav bar, name scrolled off) lets the card title/body row
 # stand in at up to +0.020. The name is the topmost row hugging the block
 # (_doorplate_row); the band below is the flowing-text clearance test.
-DOORPLATE_HUG_UP = 0.008     # name may start this far above the ink top
-DOORPLATE_HUG_DOWN = 0.0125  # ...or this far below it (keep max +0.0107,
+DOORPLATE_HUG_UP = _H["doorplate_hug_up"]["value"]     # name may start this far above the ink top
+DOORPLATE_HUG_DOWN = _H["doorplate_hug_down"]["value"]  # ...or this far below it (keep max +0.0107,
                              # closest impostor +0.0143)
-DOORPLATE_BAND_DOWN = 0.01   # the old band bottom, kept for the next-row
+DOORPLATE_BAND_DOWN = _H["doorplate_band_down"]["value"]   # the old band bottom, kept for the next-row
                              # clearance scan below the name
 # The post's flowing text (body, or the reshare card title) starts well
 # clear of the block top (corpus 2026-11-15: keep min +0.039, bulk +0.050;
 # closest impostor +0.032); text pressing on closer than this means the
 # rows are flowing BESIDE a clipped cover — no name exists.
-DOORPLATE_NEXT_MIN = 0.032
+DOORPLATE_NEXT_MIN = _H["doorplate_next_min"]["value"]
 # The picture beside a name is ALWAYS taller than the name line itself —
 # an avatar or reshare cover is a square whose ink stands ≥ 1.38× the
 # name row (corpus 2026-11-15, 235 keeps; name lines h ≤ 0.031). A block
@@ -168,7 +185,7 @@ DOORPLATE_NEXT_MIN = 0.032
 # scrolled off screen top and the body's first line took its place beside
 # the avatar (受邀参加 ratio 0.94, 很多年前 0.59 — killed 2026-11-15;
 # threshold 1.15 sits mid-gap to keep-min 1.38 and impostor-max 0.94).
-DOORPLATE_PHOTO_MIN_RATIO = 1.15
+DOORPLATE_PHOTO_MIN_RATIO = _H["doorplate_photo_min_ratio"]["value"]
 # Loose attribution floor (unbounded region — no divider above it): the
 # feed-top page's post 1 sits below the profile cover, which is never
 # shorter than ~0.19 of the window (measured across 174 real captures),
@@ -333,7 +350,7 @@ def is_time_row_prefix(text: str) -> bool:
 # 最左簇（永不落在真左缘之左——卡行只会待在右边）。万得卡内嵌戳离
 # 真左缘 +0.077，OCR 抖动 ~0.01：取 0.03 = 拒卡戳留 0.047 余量、放
 # 真行留 3 倍抖动余量。
-TIME_ROW_X_SLACK = 0.03
+TIME_ROW_X_SLACK = _H["time_row_x_slack"]["value"]
 
 
 def time_row_on_col(row: Dict, col_x: Optional[float]) -> bool:
@@ -567,13 +584,14 @@ def measure_col_x(rows: List[Dict]) -> Optional[float]:
     if not xs:
         return None
     xs = sorted(xs)
-    # 簇距 0.012：真列与第一缩进列（卡片/评论，实测只偏右 0.02）不得
+    # 簇距 = CLUSTER_GAP（图纸 habits.cluster_gap）：真列与第一缩进列
+    # （卡片/评论，实测只偏右 0.02）不得
     # 链式并簇——0.02 的旧簇距正好把万得帧的真列 0.267 和卡缩进
     # 0.286-0.296 并成一簇、中位数 0.288。真列自身抖动 ~0.01，0.012
     # 保簇不散；即便偶发裂簇，最左子簇仍 ≈ 真列。
     clusters: List[List[float]] = [[xs[0]]]
     for v in xs[1:]:
-        if v - clusters[-1][-1] <= 0.012:
+        if v - clusters[-1][-1] <= CLUSTER_GAP:
             clusters[-1].append(v)
         else:
             clusters.append([v])

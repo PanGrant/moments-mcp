@@ -1,10 +1,11 @@
-"""朋友圈布局图纸（ldl L1）——门牌/时间行试点（任务 3 §5 第 1 步）。
+"""朋友圈布局图纸（ldl L1）——门牌/时间行试点。
 
-这是 post_schema.py 里同居的图纸第一次被搬出来单独成文：座位、契约、
-判据阈值全部声明在数据里，每条带语料证据出处。感知层目前仍在
-post_schema.py 施工（第 2 步才改读声明），所以本模块自带一张
-**对账表**：图纸数值 ↔ 施工常量逐项比对，`python -m
-services.digest.layout_def` 即验。漂移在施工侧改数而忘改图时当场报警。
+这是 post_schema.py 里同居的图纸搬出来单独成文的产物：座位、契约、
+判据阈值全部声明在数据里，每条带语料证据出处。**第 2 步（2026-11-25）
+后感知层已改读声明施工**：post_schema 导入时装订本图的 habits 值——
+改阈值只改这里；图纸损坏则 post_schema 拒绝启动。本模块的 `__main__`
+对账表因此变为**接线冒烟**：若有人在施工侧重新把数值写死（回到双源），
+这里当场报警。
 
 值的两分类（宪法第三条）：
 - habits（物种习性）＝全语料量定的群体边界，每条带证据；
@@ -14,9 +15,9 @@ services.digest.layout_def` 即验。漂移在施工侧改数而忘改图时当�
 """
 from ldl.schema import ColumnSpec, ContractSpec, LayoutDef, MEASURED, RowSpec
 
-# 对账表：habit 键 → (施工侧常量名)。__main__ 逐项比对；施工侧没有
-# 对应常量的判据（如 col_x 簇距 0.012 是 measure_col_x 函数体内联字
-# 面量）不在表内——那正是第 2 步要让施工改读声明的点。
+# 接线冒烟表：habit 键 → 施工侧装订常量名。__main__ 逐项比对——
+# 施工侧全部从图纸装订后，两侧数值同源，正常恒等；出现不等 =
+# 施工侧有人写死了字面量（双源回归），报警。
 _LEDGER = {
     "doorplate_hug_up": "DOORPLATE_HUG_UP",
     "doorplate_hug_down": "DOORPLATE_HUG_DOWN",
@@ -26,6 +27,7 @@ _LEDGER = {
     "author_zone": "AUTHOR_ZONE",
     "author_x_max": "AUTHOR_X_MAX",
     "time_row_x_slack": "TIME_ROW_X_SLACK",
+    "cluster_gap": "CLUSTER_GAP",
     "content_x_lo": None,   # CONTENT_X[0]
     "content_x_hi": None,   # CONTENT_X[1]
 }
@@ -141,8 +143,8 @@ def build() -> LayoutDef:
             "cluster_gap": {
                 "value": 0.012,
                 "evidence": "真列与第一缩进列实测只偏右 0.02，真列自身抖动"
-                            " ~0.01；簇距 0.012 保两列并簇前先分开（施工侧"
-                            "尚未命名此常量——第 2 步收编）",
+                            " ~0.01；簇距 0.012 保簇不散（2026-11-16 教训："
+                            "旧簇距 0.02 把真列与卡缩进并簇、中位数中毒）",
             },
         },
     )

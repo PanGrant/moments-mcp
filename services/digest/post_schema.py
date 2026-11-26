@@ -101,7 +101,7 @@ from .layout_def import build as _build_layout_def
 
 # ---------------------------------------------------------------------------
 # 判据声明化（2026-11-25，ldl 试点第 2 步）：下面经 _H[...] 装订的阈值，
-# 源头不再是本文件——是 services/digest/layout_def.build().habits（每条
+# 源头不再是本文件——是 services/digest/layout_def.build().thresholds（每条
 # 带语料证据出处）。改阈值 → 改图纸（layout_def.py），施工侧导入时自动
 # 跟随；图纸本身损坏则在这里响亮拒绝启动。历史教训注释保留原位。
 # 其余未声明阈值（AUTHOR_MAX_LEN / REGION_AUTHOR_MIN_CONF / ANCHOR_* 等）
@@ -111,7 +111,7 @@ _LAYOUT_DEF = _build_layout_def()
 _LAYOUT_ERRS = _LAYOUT_DEF.validate()
 if _LAYOUT_ERRS:
     raise RuntimeError(f"布局图纸校验失败，施工拒绝启动: {_LAYOUT_ERRS}")
-_H = _LAYOUT_DEF.habits
+_H = _LAYOUT_DEF.thresholds
 
 # ---------------------------------------------------------------------------
 # tuning constants (moved verbatim from ocr_extract 2026-11-15; the comments
@@ -584,7 +584,7 @@ def measure_col_x(rows: List[Dict]) -> Optional[float]:
     if not xs:
         return None
     xs = sorted(xs)
-    # 簇距 = CLUSTER_GAP（图纸 habits.cluster_gap）：真列与第一缩进列
+    # 簇距 = CLUSTER_GAP（定义 thresholds.cluster_gap）：真列与第一缩进列
     # （卡片/评论，实测只偏右 0.02）不得
     # 链式并簇——0.02 的旧簇距正好把万得帧的真列 0.267 和卡缩进
     # 0.286-0.296 并成一簇、中位数 0.288。真列自身抖动 ~0.01，0.012

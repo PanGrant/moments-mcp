@@ -1,6 +1,6 @@
 """朋友圈布局图纸（ldl L1）——门牌/时间行试点。
 
-这是 post_schema.py 里同居的图纸搬出来单独成文的产物：座位、契约、
+这是 post_schema.py 里同居的图纸搬出来单独成文的产物：行、契约、
 判据阈值全部声明在数据里，每条带语料证据出处。**第 2 步（2026-11-25）
 后感知层已改读声明施工**：post_schema 导入时装订本图的 habits 值——
 改阈值只改这里；图纸损坏则 post_schema 拒绝启动。本模块的 `__main__`
@@ -48,11 +48,11 @@ def build() -> LayoutDef:
                                MEASURED),
         },
         rows=[
-            # ── 试点座位 1：门牌（作者行）──
+            # ── 试点行 1：门牌（作者行）──
             # 识别契约：贴靠照片块顶的名字形状行，过三关（贴靠/清空/
             # 照片身高），内容盲——名字区只认位置（2026-11-23 宪法修正）。
             RowSpec("doorplate", "fixed(name_row_h)", ContractSpec(
-                admit="author_shape_row_hugging_photo_ink_top",
+                shape="author_shape_row_hugging_photo_ink_top",
                 gates=["author_zone", "author_x_max",
                        "doorplate_hug_up", "doorplate_hug_down",
                        "doorplate_next_min", "doorplate_band_down",
@@ -61,24 +61,24 @@ def build() -> LayoutDef:
                 exceptions=["sponsor_arrow"],   # 广告卡箭头像素探针
                 emits=["author_name"],
             )),
-            # ── 试点座位 2：时间行 ──
+            # ── 试点行 2：时间行 ──
             # 时间形状（"刚刚/N分钟前/昨天 HH:MM/…"）+ 内容列 x 门；
             # 顺带产出评论按钮 x 样本（button_x 取中位数的来源）。
             RowSpec("time_row", "fixed(time_row_h)", ContractSpec(
-                admit="time_shape_row_on_text_column",
+                shape="time_shape_row_on_text_column",
                 gates=["time_row_x_slack"],
                 content_blind=True,
                 emits=["time_text", "comment_button"],
             )),
-            # ── 树的上下文（本轮试点不施工，契约后续补齐）──
+            # ── 树的上下文（本轮试点不给识别契约，后续补齐）──
             RowSpec("body", "variable", ContractSpec(
-                admit="under_doorplate",
+                shape="under_doorplate",
                 content_blind=False,
                 content_blind_why="正文内容本身就是要提取的数据",
                 emits=["body_text", "expand_link"],
             )),
             RowSpec("comments", "variable", ContractSpec(
-                admit="under_time_row",
+                shape="under_time_row",
                 gates=[],
                 content_blind=True,
                 emits=[],
@@ -90,7 +90,7 @@ def build() -> LayoutDef:
             "avatar_offset_x", "comment_indent_x", "comment_pitch",
             "time_comments_gap", "button_x",
         ],
-        habits={
+        thresholds={
             # ── 门牌三关（2026-11-15，235 真门牌量定）──
             "doorplate_hug_up": {
                 "value": 0.008,
@@ -155,7 +155,7 @@ def _check_against_builder() -> list:
     from services.digest import post_schema as ps
     problems = []
     for key, const in _LEDGER.items():
-        want = build().habits[key]["value"]
+        want = build().thresholds[key]["value"]
         if const is None:
             got = {"content_x_lo": ps.CONTENT_X[0],
                    "content_x_hi": ps.CONTENT_X[1]}[key]
@@ -169,12 +169,12 @@ def _check_against_builder() -> list:
 if __name__ == "__main__":
     d = build()
     errs = d.validate()
-    n_habits = len(d.habits)
+    n_thresholds = len(d.thresholds)
     n_measured = len(d.measured)
     n_gates = sum(len(r.contract.gates) for r in d.rows)
     print(f"图纸校验: {'通过' if not errs else errs}")
-    print(f"  行 {len(d.rows)} 座位（试点: 门牌/时间行）· 列 {len(d.columns)}"
-          f" · 习性 {n_habits} · 实测槽位 {n_measured} · 门引用 {n_gates}")
+    print(f"  行 {len(d.rows)}（试点: 门牌/时间行）· 列 {len(d.columns)}"
+          f" · 阈值 {n_thresholds} · 实测槽位 {n_measured} · 检查引用 {n_gates}")
     round_trip = LayoutDef.from_dict(d.to_dict())
     print(f"  to_dict/from_dict 往返: "
           f"{'一致' if round_trip.to_dict() == d.to_dict() else '不一致!'}")
